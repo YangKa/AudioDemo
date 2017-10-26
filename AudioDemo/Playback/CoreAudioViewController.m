@@ -7,6 +7,7 @@
 //
 
 #import "CoreAudioViewController.h"
+#import <AVFoundation/AVFoundation.h>
 
 @interface CoreAudioViewController ()
 
@@ -17,21 +18,38 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
+    
+    
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+- (void)playAudio{
+    //create audio file
+    NSString *filePath = [NSHomeDirectory() stringByAppendingPathComponent:@"4.caf"];
+    NSURL *fileURL = [ NSURL fileURLWithPath:filePath];
+    
+    AudioStreamBasicDescription informat;
+    AudioFileID audioFileID;
+    AudioFileCreateWithURL(
+                           (__bridge CFURLRef)fileURL,
+                           kAudioFileCAFType,
+                           &informat,
+                           kAudioFileFlags_EraseFile,
+                           &audioFileID
+                           );
+    
+    
+    //open audio file
+    NSURL *fileURL1 = [[NSBundle mainBundle] URLForResource:@"3" withExtension:@"wav"];
+    
+    AudioFileID audioFileID1;
+    AudioFileOpenURL((__bridge CFURLRef)fileURL1,
+                     kAudioFileReadPermission,
+                     kAudioFileCAFType,
+                     audioFileID1);
+    
+    
+    
 }
 
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-}
-*/
 
 @end
