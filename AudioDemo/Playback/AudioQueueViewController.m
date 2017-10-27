@@ -11,30 +11,132 @@
 
 #import <AVFoundation/AVFoundation.h>
 
-@interface AudioQueueViewController (){
-    AudioStreamBasicDescription _recordFormat;
-
-
-    AudioQueueRef _audioQueue;
-}
+@interface AudioQueueViewController ()
 
 @end
+
+/**
+ *	添加播放功能
+ *	1.自定义一个管理文件格式、路径等信息的结构体
+ *	2.定义一个音频队列函数去执行播放功能
+ *	3.定义音频队列缓存区的大小
+ *	4.open一个需要播放的音频文件，并且定义它的数据编码格式
+ *	5.创建一个音频队列并且配置它
+ *	6.为缓存区分配内存和入队列。启动音频队列播放，并在callback函数中适当时候结束它。
+ *	7.销毁音频队列
+ */
+
+//自定义音频信息结构
+static const int kNumberBuffers = 3;//单个缓冲区，一个填充数据，一个取数据，一个在磁盘I/O延迟补偿的时候用。
+struct MyAudioInfo{
+    AudioFileID mAudioFile;
+    AudioStreamBasicDescription mDataFormat;//the audio data format of the file being play
+    AudioQueueRef mQueue;
+    AudioQueueBufferRef mBuffers[kNumberBuffers];
+    
+    UInt32 bufferByteSize;//single buffer size ,in bytes
+    SInt64    mCurrentPacket;//packet index for the next packet to play from the audio file
+    UInt32 mNumPacketsToRead;//callback 函数每次调用从文件中取出的packet数量
+    AudioStreamPacketDescription *mPacketDescs;//音频数据是VBR，则是对一组将要播放的packet的描述。是    CBR，则为NULL
+    bool    mIsRunning;//current audio queue is running
+    
+};
+typedef struct MyAudioInfo MyAudioInfo;
 
 @implementation AudioQueueViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
+  
+}
+
+/** 回调方法
+ *	1.从音频文件获取数据，填入缓冲区
+ *	2.将填充后的缓冲区加入缓冲队列
+ *	3.没有数据可读时，结束音频队列
+ */
+void HandlerOutputBuffer(void* inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer){
+    
+ 	MyAudioInfo *myAudioInfo  = (MyAudioInfo *)inUserData;
+    if (myAudioInfo -> mIsRunning == 0) return;
+    
+    //get data from file and put in buffer
+    UInt32 ioNumBytes;
+    UInt32 iosNumPackets = myAudioInfo -> mNumPacketsToRead;
+    AudioFileReadPacketData(myAudioInfo -> mAudioFile,
+                            false,
+                            &ioNumBytes,
+                            myAudioInfo -> mPacketDescs,
+                            myAudioInfo -> mCurrentPacket,
+                            &iosNumPackets,
+                            inBuffer -> mAudioData);
+    
+    //no data can read from the file
+    if (iosNumPackets == 0) {
+        AudioQueueStop(inAQ, false);//当缓冲队列中的缓冲数据都播放完后，同步结束音频队列
+        myAudioInfo -> mIsRunning = false;
+    }else{
+        
+        inBuffer -> mAudioDataByteSize = ioNumBytes;
+        
+        //add the buffer to buffer queue
+        AudioQueueEnqueueBuffer(inAQ,
+                                inBuffer,
+                                myAudioInfo -> mPacketDescs ? iosNumPackets:0,//The number of packets represented in the audio queue buffer’s data. For CBR data, which uses no packet descriptions, uses 0.
+                                myAudioInfo -> mPacketDescs);
+        //update packet start index
+        myAudioInfo -> mCurrentPacket += iosNumPackets;
+    }
+}
+
+/** 设置缓存区大小，需要考虑数据格式，以及和格式先关的一些因素，比如采集通道数
+ *	ASBDesc	aduio queue struct description
+ *  maxPacketSize 预估文件packet的大小，可以通过AudioFileGetProperty来获取
+ *  seconds 每个缓存区的音频时间长度
+ *	outBufferSize 每个缓存区的字节大小
+ *	outNumPacketsToRead 每次回调方法调用想要从文件获取packet的数量
+ */
+void DeriveBufferSize(AudioStreamBasicDescription ASBDesc,
+                      UInt32 maxPacketSize,
+                      Float64 seconds,
+                      UInt32 *outBufferSize,
+                      UInt32 *outNumPacketsToRead){
+    
+    static const int maxBufferSize = 0x50000;//320k
+    static const int minBufferSize = 0x4000;//16k
+    
+    if (ASBDesc.mFramesPerPacket != 0) {//
+
+        Float64 numPacketsForTime = ASBDesc.mSampleRate / ASBDesc.mFramesPerPacket * seconds;
+        *outBufferSize = numPacketsForTime * maxPacketSize;
+    }else{//
+        *outBufferSize = maxBufferSize > maxPacketSize ? maxBufferSize:maxPacketSize;
+    }
+    
+    if (*outBufferSize > maxBufferSize && *outBufferSize > maxPacketSize) {//
+        *outBufferSize = maxBufferSize;
+    }else{//
+        if (*outBufferSize < minBufferSize) {
+            *outBufferSize = minBufferSize;
+        }
+    }
+    
+    *outNumPacketsToRead = *outBufferSize / maxPacketSize;
 }
 
 - (void)play{
+    NSString *filePath = [[NSBundle mainBundle] pathForResource:@"1" ofType:@"mp3"];
+    CFURLRef audioFileURL = CFURLCreateFromFileSystemRepresentation(NULL,//默认内存分配
+                                                                    (const UInt8*)filePath,
+                                                                    strlen(filePath),
+                                                                    false);
     
-    AudioQueueNewOutput(&(_recordFormat), outputCallBack, (__bridge void*)self, NULL, NULL, 0, &(_audioQueue));
-}
-
-void outputCallBack(void* inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer){
-//    AudioFileOpenURL(CFURLRef  _Nonnull inFileRef, AudioFilePermissions inPermissions, AudioFileTypeID inFileTypeHint, AudioFileID  _Nullable * _Nonnull outAudioFile)
-//    AudioFileReadPacketData(AudioFileID  _Nonnull inAudioFile, Boolean inUseCache, UInt32 * _Nonnull ioNumBytes, AudioStreamPacketDescription * _Nullable outPacketDescriptions, SInt64 inStartingPacket, UInt32 * _Nonnull ioNumPackets, void * _Nullable outBuffer)
+    MyAudioInfo myAudioInfo;
+    OSStatus result = AudioFileOpenURL(audioFileURL, kAudioFileReadPermission, 0, &myAudioInfo.mAudioFile);
+    CFRelease(audioFileURL);
+    
+    
+    //obtaining a file's Audio data format
 }
 
 @end

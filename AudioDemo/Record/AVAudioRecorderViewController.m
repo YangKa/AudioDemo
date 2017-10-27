@@ -22,8 +22,6 @@
 
 - (void)startRecording{
     
-    
-    
     NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"temp.wav"];
     NSURL *saveURL = [NSURL fileURLWithPath:path];
     NSDictionary *setting = @{AVSampleRateKey:@8000,
