@@ -11,19 +11,15 @@
 
 #import <AVFoundation/AVFoundation.h>
 
-@interface AudioQueueViewController ()
-
-@end
-
 /**
- *	添加播放功能
- *	1.自定义一个管理文件格式、路径等信息的结构体
- *	2.定义一个音频队列函数去执行播放功能
- *	3.定义音频队列缓存区的大小
- *	4.open一个需要播放的音频文件，并且定义它的数据编码格式
- *	5.创建一个音频队列并且配置它
- *	6.为缓存区分配内存和入队列。启动音频队列播放，并在callback函数中适当时候结束它。
- *	7.销毁音频队列
+ *    添加播放功能
+ *    1.自定义一个管理文件格式、路径等信息的结构体
+ *    2.定义一个音频队列函数去执行播放功能
+ *    3.定义音频队列缓存区的大小
+ *    4.open一个需要播放的音频文件，并且定义它的数据编码格式
+ *    5.创建一个音频队列并且配置它
+ *    6.为缓存区分配内存和入队列。启动音频队列播放，并在callback函数中适当时候结束它。
+ *    7.销毁音频队列
  */
 
 //自定义音频信息结构
@@ -42,6 +38,13 @@ struct MyAudioInfo{
     
 };
 typedef struct MyAudioInfo MyAudioInfo;
+
+
+@interface AudioQueueViewController (){
+    MyAudioInfo myAudioInfo;
+}
+
+@end
 
 @implementation AudioQueueViewController
 
@@ -125,18 +128,117 @@ void DeriveBufferSize(AudioStreamBasicDescription ASBDesc,
 }
 
 - (void)play{
+    
+    
+    
     NSString *filePath = [[NSBundle mainBundle] pathForResource:@"1" ofType:@"mp3"];
+    CFStringRef string = (__bridge CFStringRef)filePath;
+
     CFURLRef audioFileURL = CFURLCreateFromFileSystemRepresentation(NULL,//默认内存分配
-                                                                    (const UInt8*)filePath,
-                                                                    strlen(filePath),
+                                                                    string,
+                                                                    CFURLPathStyle.CFURLPOSIXPathStyle,
                                                                     false);
     
-    MyAudioInfo myAudioInfo;
+    
     OSStatus result = AudioFileOpenURL(audioFileURL, kAudioFileReadPermission, 0, &myAudioInfo.mAudioFile);
     CFRelease(audioFileURL);
     
     
     //obtaining a file's Audio data format
+    UInt32 dataFormatSize = sizeof(myAudioInfo.mDataFormat);
+    
+    AudioFileGetProperty(myAudioInfo.mAudioFile,
+                         kAudioFilePropertyDataFormat,
+                         &dataFormatSize,
+                         &myAudioInfo.mDataFormat);
+    
+    //create Audio queue
+    AudioQueueNewOutput(&myAudioInfo.mDataFormat,
+                        HandlerOutputBuffer,
+                        &myAudioInfo,
+                        CFRunLoopGetCurrent(),
+                        kCFRunLoopCommonModes,
+                        0,
+                        &myAudioInfo.mQueue);
+    
+    //Set Buffer Size and Number of Packets to Read
+    UInt32 maxPacketSize;
+    UInt32 propertySize = sizeof(maxPacketSize);
+    AudioFileGetProperty(myAudioInfo.mAudioFile,
+                         kAudioFilePropertyPacketSizeUpperBound,
+                         &propertySize,
+                         &maxPacketSize);
+    
+    DeriveBufferSize(myAudioInfo.mDataFormat,
+                     maxPacketSize,
+                     0.5,
+                     &myAudioInfo.bufferByteSize,
+                     &myAudioInfo.mNumPacketsToRead);
+    
+    //Allocate Memory for a Packet Descriptions Array
+    bool isFormatVBR = ( myAudioInfo.mDataFormat.mFramesPerPacket == 0 || myAudioInfo.mDataFormat.mBytesPerFrame == 0 );
+    if (isFormatVBR) {
+        myAudioInfo.mPacketDescs = (AudioStreamPacketDescription*) malloc(myAudioInfo.mNumPacketsToRead * sizeof(AudioStreamPacketDescription));
+    }else{
+        myAudioInfo.mPacketDescs = NULL;
+    }
+    
+    //Set a Magic Cookie for a Playback Audio Queue
+    UInt32 cookieSize = sizeof(UInt32);
+    bool canGetProperty = AudioFileGetPropertyInfo(myAudioInfo.mAudioFile,
+                                                   kAudioFilePropertyMagicCookieData,
+                                                   &cookieSize,
+                                                   NULL);
+    if (!canGetProperty && cookieSize) {
+        char* magicCookie = (char *)malloc(cookieSize);
+        
+        AudioFileGetProperty(myAudioInfo.mAudioFile,
+                             kAudioFilePropertyMagicCookieData,
+                             &cookieSize,
+                             magicCookie);
+        
+        AudioQueueSetProperty(myAudioInfo.mQueue,
+                              kAudioQueueProperty_MagicCookie,
+                              magicCookie,
+                              cookieSize);
+        
+        free(magicCookie);
+    }
+    
+    //Allocate and Prime Audio Queue Buffers
+    myAudioInfo.mCurrentPacket = 0;
+    for (int i = 0; i < kNumberBuffers; ++i) {
+        AudioQueueAllocateBuffer(myAudioInfo.mQueue, myAudioInfo.bufferByteSize, &myAudioInfo.mBuffers[i]);
+        HandlerOutputBuffer(&myAudioInfo, myAudioInfo.mQueue, myAudioInfo.mBuffers[i]);
+    }
+    
+    //Set an Audio Queue‘s Playback Gain
+    Float32 gain = 1.0;
+    AudioQueueSetParameter(myAudioInfo.mQueue, kAudioQueueParam_Volume, gain);
+    
+    
+    //Start and Run an Audio Queue
+    myAudioInfo.mIsRunning = true;
+    AudioQueueStart(myAudioInfo.mQueue, NULL);
+    
+    do {
+        CFRunLoopRunInMode(kCFRunLoopDefaultMode,
+                           0.25,
+                           false);
+    } while (myAudioInfo.mIsRunning);
+    
+    CFRunLoopRunInMode(kCFRunLoopDefaultMode,
+                       1,
+                       false);
+}
+
+//Clean up After Playing
+- (void)cleanUpAfterPlay{
+    AudioQueueDispose(myAudioInfo.mQueue, true);
+    
+    AudioFileClose(myAudioInfo.mAudioFile);
+    
+    free(myAudioInfo.mPacketDescs);
 }
 
 @end
