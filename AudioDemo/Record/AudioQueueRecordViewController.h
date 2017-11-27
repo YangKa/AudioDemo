@@ -8,6 +8,6 @@
 
 #import <UIKit/UIKit.h>
 
-@interface AudioQueueViewController : UIViewController
+@interface AudioQueueRecordViewController : UIViewController
 
 @end

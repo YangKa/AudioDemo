@@ -50,7 +50,13 @@ typedef struct MyAudioInfo MyAudioInfo;
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-  
+    self.view.backgroundColor = [UIColor whiteColor];
+    
+    UIButton *btn = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
+    btn.backgroundColor = [UIColor blueColor];
+    btn.center = self.view.center;
+    [btn addTarget:self action:@selector(play) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:btn];
 }
 
 /** 回调方法
@@ -73,7 +79,7 @@ void HandlerOutputBuffer(void* inUserData, AudioQueueRef inAQ, AudioQueueBufferR
                             myAudioInfo -> mCurrentPacket,
                             &iosNumPackets,
                             inBuffer -> mAudioData);
-    
+    NSLog(@"HandlerOutputBuffer");
     //no data can read from the file
     if (iosNumPackets == 0) {
         AudioQueueStop(inAQ, false);//当缓冲队列中的缓冲数据都播放完后，同步结束音频队列
@@ -127,20 +133,27 @@ void DeriveBufferSize(AudioStreamBasicDescription ASBDesc,
     *outNumPacketsToRead = *outBufferSize / maxPacketSize;
 }
 
+bool getFilename(char* buffer,int maxBufferLength)
+{
+    NSString* file = [[NSBundle mainBundle] pathForResource:@"3" ofType:@"wav"];
+    return [file getCString:buffer maxLength:maxBufferLength encoding:NSUTF8StringEncoding];
+}
+
 - (void)play{
     
+    if (myAudioInfo.mIsRunning) {
+        [self stop];
+        return;
+    }
     
+    //create CFURLRef
+    char filePath[256];
+    memset(filePath,0,sizeof(filePath));
+    getFilename(filePath,256); //path的目录已经得到了
+    CFURLRef audioFileURL = CFURLCreateFromFileSystemRepresentation(NULL, (UInt8 *)filePath, strlen(filePath), false);
     
-    NSString *filePath = [[NSBundle mainBundle] pathForResource:@"1" ofType:@"mp3"];
-    CFStringRef string = (__bridge CFStringRef)filePath;
-
-    CFURLRef audioFileURL = CFURLCreateFromFileSystemRepresentation(NULL,//默认内存分配
-                                                                    string,
-                                                                    CFURLPathStyle.CFURLPOSIXPathStyle,
-                                                                    false);
-    
-    
-    OSStatus result = AudioFileOpenURL(audioFileURL, kAudioFileReadPermission, 0, &myAudioInfo.mAudioFile);
+    //open auido file
+    AudioFileOpenURL(audioFileURL, kAudioFileReadPermission, 0, &myAudioInfo.mAudioFile);
     CFRelease(audioFileURL);
     
     
@@ -230,6 +243,15 @@ void DeriveBufferSize(AudioStreamBasicDescription ASBDesc,
     CFRunLoopRunInMode(kCFRunLoopDefaultMode,
                        1,
                        false);
+}
+
+- (void)stop{
+    if (myAudioInfo.mIsRunning) {
+        AudioQueueStop(myAudioInfo.mQueue, false);//当缓冲队列中的缓冲数据都播放完后，同步结束音频队列
+        myAudioInfo.mIsRunning = false;
+        
+        [self cleanUpAfterPlay];
+    }
 }
 
 //Clean up After Playing

@@ -21,10 +21,9 @@
 		8FE60B0B1FA09CF6005DF9C2 /* 2.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8FE60B071FA09CF6005DF9C2 /* 2.mp3 */; };
 		8FE60B0C1FA09CF6005DF9C2 /* 3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8FE60B081FA09CF6005DF9C2 /* 3.wav */; };
 		8FE60B0F1FA09D0B005DF9C2 /* AVAudioSessionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FE60B0E1FA09D0B005DF9C2 /* AVAudioSessionViewController.m */; };
-		8FE60B121FA09D42005DF9C2 /* CoreAudioViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FE60B111FA09D42005DF9C2 /* CoreAudioViewController.m */; };
 		8FFF13611FA1903D00C9C226 /* AudioServicesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FFF13601FA1903D00C9C226 /* AudioServicesViewController.m */; };
 		8FFF13641FA1BAEB00C9C226 /* AVAudioRecorderViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FFF13631FA1BAEB00C9C226 /* AVAudioRecorderViewController.m */; };
-		8FFF13671FA1C41400C9C226 /* AudioQueueViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FFF13661FA1C41400C9C226 /* AudioQueueViewController.m */; };
+		8FFF13671FA1C41400C9C226 /* AudioQueueRecordViewController.h.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FFF13661FA1C41400C9C226 /* AudioQueueRecordViewController.h.m */; };
 		8FFF136A1FA1E08B00C9C226 /* AudioQueueViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FFF13691FA1E08B00C9C226 /* AudioQueueViewController.m */; };
 		8FFF136D1FA1E30700C9C226 /* AudioEngineViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FFF136C1FA1E30700C9C226 /* AudioEngineViewController.m */; };
 /* End PBXBuildFile section */
@@ -53,14 +52,12 @@
 		8FE60B081FA09CF6005DF9C2 /* 3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = 3.wav; sourceTree = "<group>"; };
 		8FE60B0D1FA09D0B005DF9C2 /* AVAudioSessionViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AVAudioSessionViewController.h; sourceTree = "<group>"; };
 		8FE60B0E1FA09D0B005DF9C2 /* AVAudioSessionViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AVAudioSessionViewController.m; sourceTree = "<group>"; };
-		8FE60B101FA09D42005DF9C2 /* CoreAudioViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CoreAudioViewController.h; sourceTree = "<group>"; };
-		8FE60B111FA09D42005DF9C2 /* CoreAudioViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CoreAudioViewController.m; sourceTree = "<group>"; };
 		8FFF135F1FA1903D00C9C226 /* AudioServicesViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioServicesViewController.h; sourceTree = "<group>"; };
 		8FFF13601FA1903D00C9C226 /* AudioServicesViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AudioServicesViewController.m; sourceTree = "<group>"; };
 		8FFF13621FA1BAEB00C9C226 /* AVAudioRecorderViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AVAudioRecorderViewController.h; sourceTree = "<group>"; };
 		8FFF13631FA1BAEB00C9C226 /* AVAudioRecorderViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AVAudioRecorderViewController.m; sourceTree = "<group>"; };
-		8FFF13651FA1C41400C9C226 /* AudioQueueViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioQueueViewController.h; sourceTree = "<group>"; };
-		8FFF13661FA1C41400C9C226 /* AudioQueueViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AudioQueueViewController.m; sourceTree = "<group>"; };
+		8FFF13651FA1C41400C9C226 /* AudioQueueRecordViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioQueueRecordViewController.h; sourceTree = "<group>"; };
+		8FFF13661FA1C41400C9C226 /* AudioQueueRecordViewController.h.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AudioQueueRecordViewController.h.m; sourceTree = "<group>"; };
 		8FFF13681FA1E08B00C9C226 /* AudioQueueViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioQueueViewController.h; sourceTree = "<group>"; };
 		8FFF13691FA1E08B00C9C226 /* AudioQueueViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AudioQueueViewController.m; sourceTree = "<group>"; };
 		8FFF136B1FA1E30700C9C226 /* AudioEngineViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioEngineViewController.h; sourceTree = "<group>"; };
@@ -119,8 +116,8 @@
 			children = (
 				8FFF13621FA1BAEB00C9C226 /* AVAudioRecorderViewController.h */,
 				8FFF13631FA1BAEB00C9C226 /* AVAudioRecorderViewController.m */,
-				8FFF13651FA1C41400C9C226 /* AudioQueueViewController.h */,
-				8FFF13661FA1C41400C9C226 /* AudioQueueViewController.m */,
+				8FFF13651FA1C41400C9C226 /* AudioQueueRecordViewController.h */,
+				8FFF13661FA1C41400C9C226 /* AudioQueueRecordViewController.h.m */,
 				8FFF136B1FA1E30700C9C226 /* AudioEngineViewController.h */,
 				8FFF136C1FA1E30700C9C226 /* AudioEngineViewController.m */,
 			);
@@ -138,8 +135,6 @@
 				8FE60B001FA09C84005DF9C2 /* AVPlayerViewController.m */,
 				8FE60B021FA09CA6005DF9C2 /* AVAudioEngineViewController.h */,
 				8FE60B031FA09CA6005DF9C2 /* AVAudioEngineViewController.m */,
-				8FE60B101FA09D42005DF9C2 /* CoreAudioViewController.h */,
-				8FE60B111FA09D42005DF9C2 /* CoreAudioViewController.m */,
 				8FFF135F1FA1903D00C9C226 /* AudioServicesViewController.h */,
 				8FFF13601FA1903D00C9C226 /* AudioServicesViewController.m */,
 				8FFF13681FA1E08B00C9C226 /* AudioQueueViewController.h */,
@@ -246,10 +241,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8FE60B121FA09D42005DF9C2 /* CoreAudioViewController.m in Sources */,
 				8FE60AFE1FA09C39005DF9C2 /* AudioPlayerViewController.m in Sources */,
 				8FE60B041FA09CA6005DF9C2 /* AVAudioEngineViewController.m in Sources */,
-				8FFF13671FA1C41400C9C226 /* AudioQueueViewController.m in Sources */,
+				8FFF13671FA1C41400C9C226 /* AudioQueueRecordViewController.h.m in Sources */,
 				8FE60AE61FA09B67005DF9C2 /* ViewController.m in Sources */,
 				8FE60B011FA09C84005DF9C2 /* AVPlayerViewController.m in Sources */,
 				8FE60AF11FA09B68005DF9C2 /* main.m in Sources */,
