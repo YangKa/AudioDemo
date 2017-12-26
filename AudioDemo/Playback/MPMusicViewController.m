@@ -87,9 +87,9 @@
 #pragma mark 锁屏信息显示
 - (void)updateScreenPalyInfoWithMediaItem:(MPMediaItem*)item{
     //每次切换播放源时调用更新
-    //    MPMediaItemArtwork *artwork = [[MPMediaItemArtwork alloc] initWithBoundsSize:CGSizeMake(100, 100) requestHandler:^UIImage * _Nonnull(CGSize size) {
-    //        return [UIImage imageNamed:@"music"];
-    //    }];
+        MPMediaItemArtwork *artwork = [[MPMediaItemArtwork alloc] initWithBoundsSize:CGSizeMake(100, 100) requestHandler:^UIImage * _Nonnull(CGSize size) {
+            return [UIImage imageNamed:@"music"];
+        }];
     
     NSDictionary *info = @{
                            MPMediaItemPropertyTitle :item.title,
